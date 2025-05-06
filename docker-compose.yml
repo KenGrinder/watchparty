@@ -11,8 +11,6 @@ services:
       - HOST=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/watchparty?sslmode=disable}
-      - SSL_KEY_FILE=
-      - SSL_CRT_FILE=
       - FIREBASE_ADMIN_SDK_CONFIG=${FIREBASE_ADMIN_SDK_CONFIG}
     depends_on:
       redis:
@@ -35,8 +33,6 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_SERVER_HOST=https://api.watch.comradeverse.com
-      - SSL_KEY_FILE=
-      - SSL_CRT_FILE=
       - VITE_FIREBASE_CONFIG=${VITE_FIREBASE_CONFIG}
     depends_on:
       - server
