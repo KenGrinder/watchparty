@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - HOST=0.0.0.0
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/watchparty?sslmode=disable}
+      - SSL_KEY_FILE=
+      - SSL_CRT_FILE=
+      - FIREBASE_ADMIN_SDK_CONFIG=${FIREBASE_ADMIN_SDK_CONFIG}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - watchparty-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+    stdin_open: true
+    tty: true
+
+  ui:
+    build: .
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_SERVER_HOST=http://localhost:8080
+      - SSL_KEY_FILE=
+      - SSL_CRT_FILE=
+      - VITE_FIREBASE_CONFIG=${VITE_FIREBASE_CONFIG}
+    depends_on:
+      - server
+    networks:
+      - watchparty-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run ui"
+    stdin_open: true
+    tty: true
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - watchparty-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=watchparty
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - watchparty-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  watchparty-network:
+    driver: bridge 

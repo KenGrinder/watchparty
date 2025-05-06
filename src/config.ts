@@ -1,3 +1,13 @@
+// Helper function to validate and normalize sign-in methods
+const normalizeSignInMethods = (methods: string) => {
+  if (!methods) return '';
+  // Split by comma and trim each method
+  const methodList = methods.split(',').map(m => m.trim());
+  
+  // Ensure oidc.watchparty is used instead of generic oidc
+  return methodList.map(m => m === 'oidc' ? 'oidc.watchparty' : m).join(',');
+};
+
 export default {
   VITE_SERVER_HOST: import.meta.env.VITE_SERVER_HOST,
   VITE_OAUTH_REDIRECT_HOSTNAME:
@@ -11,6 +21,6 @@ export default {
   VITE_RECAPTCHA_SITE_KEY:
     import.meta.env.VITE_RECAPTCHA_SITE_KEY ??
     '6LeDGP4UAAAAAGYZZenyU-3fRdhL3p0BaBmiK9mM',
-  VITE_FIREBASE_SIGNIN_METHODS: 'facebook,google,email',
+  VITE_FIREBASE_SIGNIN_METHODS: normalizeSignInMethods(import.meta.env.VITE_FIREBASE_SIGNIN_METHODS ?? 'email,oidc.watchparty'),
   NODE_ENV: import.meta.env.DEV ? 'development' : 'production',
 };

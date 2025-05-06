@@ -10,7 +10,7 @@ import { Privacy, Terms, FAQ, DiscordBot } from './components/Pages/Pages';
 import { TopBar } from './components/TopBar/TopBar';
 import { Footer } from './components/Footer/Footer';
 import firebase from 'firebase/compat/app';
-import 'firebase/auth';
+import 'firebase/compat/auth';
 import { serverPath } from './utils';
 import { Create } from './components/Create/Create';
 import { Discord } from './components/Discord/Discord';
@@ -22,7 +22,16 @@ const Debug = lazy(() => import('./components/Debug/Debug'));
 
 const firebaseConfig = config.VITE_FIREBASE_CONFIG;
 if (firebaseConfig) {
-  firebase.initializeApp(JSON.parse(firebaseConfig));
+  try {
+    const parsedConfig = typeof firebaseConfig === 'string' 
+      ? JSON.parse(JSON.parse(firebaseConfig))
+      : firebaseConfig;
+    firebase.initializeApp(parsedConfig);
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+  }
+} else {
+  console.warn('No Firebase config found');
 }
 
 // Redirect old-style URLs
@@ -35,24 +44,42 @@ class WatchParty extends React.Component {
   public state = DEFAULT_STATE;
   async componentDidMount() {
     if (firebaseConfig) {
+      // Handle OIDC redirect result first
+      try {
+        const result = await firebase.auth().getRedirectResult();
+        
+        // If we have a successful redirect result with a credential
+        if (result.credential && result.user) {
+          // If on the auth handler page, redirect back to main app
+          if (window.location.pathname.includes('/__/auth/handler')) {
+            window.location.href = '/';
+          }
+        }
+      } catch (error) {
+        console.error('Error handling SSO redirect:', error);
+      }
+
+      // Set up auth state listener
       firebase.auth().onAuthStateChanged(async (user: firebase.User | null) => {
         if (user) {
-          // console.log(user);
           this.setState({ user });
-          const token = await user.getIdToken();
-          const response = await window.fetch(
-            serverPath + `/metadata?uid=${user.uid}&token=${token}`,
-          );
-          const data = await response.json();
-          this.setState({
-            isSubscriber: data.isSubscriber,
-            streamPath: data.streamPath,
-            beta: data.beta,
-          });
+          try {
+            const token = await user.getIdToken();
+            const response = await window.fetch(
+              serverPath + `/metadata?uid=${user.uid}&token=${token}`,
+            );
+            const data = await response.json();
+            this.setState({
+              isSubscriber: data.isSubscriber,
+              streamPath: data.streamPath,
+              beta: data.beta,
+            });
+          } catch (error) {
+            console.error('Error getting metadata:', error);
+          }
         }
       });
     } else {
-      // Firebase isn't set up so enable subscriber features
       this.setState({
         isSubscriber: true,
       });

@@ -56,6 +56,7 @@ const defaults = {
   TWITCH_PROXY_PATH: '', // Optional, URL of the server that can proxy twitch HLS stream playlists and segments
   VBROWSER_ADMIN_KEY: '', // Optional, the key to hit admin endpoints on the vbrowser
   OPENSUBTITLES_KEY: '', // Optional, key to OpenSubtitles API
+  OIDC_SCOPES: 'openid profile email', // Optional, for OIDC SSO
 };
 
 export default {
