@@ -4,7 +4,7 @@ services:
   server:
     build: .
     ports:
-      - "8080:8080"
+      - "8085:8080"
     environment:
       - NODE_ENV=development
       - PORT=8080
@@ -34,7 +34,7 @@ services:
       - "5173:5173"
     environment:
       - NODE_ENV=development
-      - VITE_SERVER_HOST=http://localhost:8080
+      - VITE_SERVER_HOST=https://api.watch.comradeverse.com
       - SSL_KEY_FILE=
       - SSL_CRT_FILE=
       - VITE_FIREBASE_CONFIG=${VITE_FIREBASE_CONFIG}
@@ -52,7 +52,7 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -66,7 +66,7 @@ services:
   postgres:
     image: postgres:alpine
     ports:
-      - "5432:5432"
+      - "5434:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
