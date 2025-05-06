@@ -18,6 +18,7 @@ import { InviteButton } from '../InviteButton/InviteButton';
 import appStyles from '../App/App.module.css';
 import { MetadataContext } from '../../MetadataContext';
 import config from '../../config';
+import { OIDCAuthProvider } from './OIDCAuthProvider';
 
 export async function createRoom(
   user: firebase.User | undefined,
@@ -85,23 +86,17 @@ type SignInButtonProps = {
 export class SignInButton extends React.Component<SignInButtonProps> {
   static contextType = MetadataContext;
   declare context: React.ContextType<typeof MetadataContext>;
-  public state = { isLoginOpen: false, isProfileOpen: false, userImage: null };
+  public state = {
+    isLoginOpen: false,
+    isProfileOpen: false,
+    userImage: null as string | null,
+  };
 
   async componentDidUpdate(prevProps: SignInButtonProps) {
     if (this.context.user && !this.state.userImage) {
       this.setState({ userImage: await getUserImage(this.context.user) });
     }
   }
-
-  facebookSignIn = async () => {
-    const provider = new firebase.auth.FacebookAuthProvider();
-    await firebase.auth().signInWithPopup(provider);
-  };
-
-  googleSignIn = async () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    await firebase.auth().signInWithPopup(provider);
-  };
 
   signOut = () => {
     firebase.auth().signOut();
@@ -137,23 +132,8 @@ export class SignInButton extends React.Component<SignInButtonProps> {
     }
     const enabledOptions = config.VITE_FIREBASE_SIGNIN_METHODS.split(',');
     const components: Record<string, JSX.Element> = {
-      facebook: (
-        <Dropdown.Item onClick={this.facebookSignIn}>
-          <Icon name="facebook" />
-          Facebook
-        </Dropdown.Item>
-      ),
-      google: (
-        <Dropdown.Item onClick={this.googleSignIn}>
-          <Icon name="google" />
-          Google
-        </Dropdown.Item>
-      ),
-      email: (
-        <Dropdown.Item onClick={() => this.setState({ isLoginOpen: true })}>
-          <Icon name="mail" />
-          Email
-        </Dropdown.Item>
+      'oidc.watchparty': (
+        <OIDCAuthProvider onSignIn={() => this.setState({ isLoginOpen: false })} />
       ),
     };
     return (
@@ -165,7 +145,7 @@ export class SignInButton extends React.Component<SignInButtonProps> {
         )}
         <Popup
           basic
-          content="Sign in for additional features"
+          content="Sign in with SSO"
           trigger={
             <Dropdown
               style={{ height: '36px' }}
@@ -177,9 +157,9 @@ export class SignInButton extends React.Component<SignInButtonProps> {
               fluid={this.props.fluid}
             >
               <Dropdown.Menu>
-                {enabledOptions.map((opt) => {
-                  return components[opt];
-                })}
+                {enabledOptions.includes('oidc.watchparty') && 
+                  React.cloneElement(components['oidc.watchparty'], { key: 'oidc.watchparty' })
+                }
               </Dropdown.Menu>
             </Dropdown>
           }

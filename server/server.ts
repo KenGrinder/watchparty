@@ -58,7 +58,19 @@ if (config.SSL_KEY_FILE && config.SSL_CRT_FILE) {
 } else {
   server = new http.Server(app);
 }
-const io = new Server(server, { cors: {}, transports: ['websocket'] });
+const io = new Server(server, { 
+  cors: {
+    origin: [
+      'https://watch.comradeverse.com',
+      'https://api.watch.comradeverse.com',
+      'http://localhost:5173', // Keep local development support
+      'http://localhost:8080'  // Keep local development support
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  }, 
+  transports: ['websocket'] 
+});
 io.engine.use(async (req: any, res: Response, next: () => void) => {
   const roomId = req._query.roomId;
   if (!roomId) {
@@ -111,7 +123,15 @@ async function init() {
   }
 }
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://watch.comradeverse.com',
+    'https://api.watch.comradeverse.com',
+    'http://localhost:5173', // Keep local development support
+    'http://localhost:8080'  // Keep local development support
+  ],
+  credentials: true
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.raw({ type: 'text/plain', limit: 1000000 }));
 
